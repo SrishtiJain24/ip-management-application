@@ -1,0 +1,32 @@
+#Application Properties
+spring:
+  application:
+    name: ip-management-application
+  security:
+    user:
+      name: admin
+      password: Admin@123
+
+#API context strings
+server:
+  apiContext: /api
+  versionContext: /v
+
+#Logging properties
+logging:
+  level:
+    com.go.ip: TRACE
+    org.springframework:
+      web: DEBUG
+      jdbc.core: DEBUG
+
+#Open API 3.0 spring documentation config
+springdoc:
+  packagesToScan: com.go.ip.controller
+  
+#Actuator endpoints exposed
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info,health,refresh,metrics
