@@ -9,5 +9,5 @@ import lombok.Data;
 public class IpGenerationRequest {
 	
 	private Long totalIp;
-	private String ipPoolId;
+	private Long ipPoolId;
 }

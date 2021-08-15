@@ -29,8 +29,7 @@ public class IpManagementController {
 	@PostMapping(value=IpConstants.ADDRESS_URI)
 	public List<String> generateIpAddress(@RequestBody IpGenerationRequest ipRequest) {
 		log.info("Request received to generate Ip Address: {}", ipRequest);
-
-		return null;
+		return ipManagementService.generateIpAddress(ipRequest);
 	}
 	
 	@GetMapping(value=IpConstants.POOL_URI)
