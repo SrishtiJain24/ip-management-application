@@ -2,6 +2,7 @@ package com.go.ip.controller;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.go.ip.model.IpGenerationRequest;
 import com.go.ip.model.IpPool;
+import com.go.ip.service.IpManagementService;
 import com.go.ip.util.IpConstants;
 
 import lombok.extern.slf4j.Slf4j;
@@ -21,6 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 		+ "${server.versionContext}" + IpConstants.V1_0 + IpConstants.IP_URI)
 public class IpManagementController {
 	
+	@Autowired
+	IpManagementService ipManagementService;
 	
 	@PostMapping(value=IpConstants.ADDRESS_URI)
 	public List<String> generateIpAddress(@RequestBody IpGenerationRequest ipRequest) {
@@ -30,10 +34,9 @@ public class IpManagementController {
 	}
 	
 	@GetMapping(value=IpConstants.POOL_URI)
-	public IpPool getIpPool(@RequestParam String poolId) {
+	public IpPool getIpPool(@RequestParam Long poolId) {
 		log.info("Request received to get Ip Pool: {}", poolId);
-
-		return null;
+		return ipManagementService.getPoolDetails(poolId);
 	}
 	
 }
