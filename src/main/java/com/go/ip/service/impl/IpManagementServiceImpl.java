@@ -8,6 +8,9 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.go.ip.exception.GenericException;
+import com.go.ip.exception.InvalidCapacityException;
+import com.go.ip.exception.IpPoolNotFoundException;
 import com.go.ip.model.IpAddress;
 import com.go.ip.model.IpGenerationRequest;
 import com.go.ip.model.IpPool;
@@ -29,11 +32,17 @@ public class IpManagementServiceImpl implements IpManagementService {
 	IpAddressRepository ipAddressRepository;
 
 	public IpPool getPoolDetails(Long poolId) {
-		Optional<IpPool> ipPool = ipPoolRepository.findById(poolId);
+		Optional<IpPool> ipPool;
+		try {
+			ipPool = ipPoolRepository.findById(poolId);
+		} catch (Exception ex) {
+			log.error("Exception Occured while fetching Ip Pool Details: {}", ex);
+			throw new GenericException(ex.getMessage());
+		}
 		if (ipPool.isPresent()) {
 			return ipPool.get();
 		} else {
-			return null;
+			throw new IpPoolNotFoundException("Ip Pool does not exist.");
 		}
 	}
 
@@ -51,8 +60,9 @@ public class IpManagementServiceImpl implements IpManagementService {
 					ipAddressPrefix);
 			persistIPPoolChanges(ipPool, ipRequest.getTotalIp());
 			return ipAddressList.stream().map(IpAddress::getValue).collect(Collectors.toList());
+		} else {
+			throw new InvalidCapacityException("Required capacity not available");
 		}
-		return null;
 	}
 
 	public List<IpAddress> createIPAddresses(Long ipStartIndex, Long totalIp, IpPool ipPool, String ipAddressPrefix) {
@@ -72,13 +82,23 @@ public class IpManagementServiceImpl implements IpManagementService {
 	}
 
 	public void persistIPAddresses(List<IpAddress> ipAddressList) {
-		ipAddressRepository.saveAll(ipAddressList);
+		try {
+			ipAddressRepository.saveAll(ipAddressList);
+		} catch (Exception ex) {
+			log.error("Exception Occured while saving Ip Addresses: {}", ex);
+			throw new GenericException(ex.getMessage());
+		}
 	}
 
 	public void persistIPPoolChanges(IpPool ipPool, Long totalIp) {
-		ipPool.setUsedCapacity(ipPool.getUsedCapacity() + totalIp);
-		log.debug("Ip Pool Updated: {}", ipPool);
-		ipPoolRepository.save(ipPool);
+		try {
+			ipPool.setUsedCapacity(ipPool.getUsedCapacity() + totalIp);
+			log.debug("Ip Pool Updated: {}", ipPool);
+			ipPoolRepository.save(ipPool);
+		} catch (Exception ex) {
+			log.error("Exception Occured while saving Ip Pool: {}", ex);
+			throw new GenericException(ex.getMessage());
+		}
 	}
 
 	static String getIpValue(String prefix, String host) {
