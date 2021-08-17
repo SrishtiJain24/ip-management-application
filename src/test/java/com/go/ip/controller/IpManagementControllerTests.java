@@ -20,6 +20,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.go.ip.exception.InvalidCapacityException;
+import com.go.ip.exception.IpPoolNotFoundException;
 import com.go.ip.model.IpGenerationRequest;
 import com.go.ip.model.IpPool;
 import com.go.ip.service.IpManagementService;
@@ -39,12 +41,14 @@ public class IpManagementControllerTests {
 	
 	private IpPool ipPool;
 	private IpGenerationRequest ipGenerationRequest;
+	private IpGenerationRequest ipGenerationRequest2;
 	List<String> ipGenerationResponse;
 
 	@BeforeEach
 	public void setup() {
 		ipPool = new IpPool(1L, "Test Pool - 0", 256L, 0L, "10.2.3.0", "10.2.3.255");
 		ipGenerationRequest = new IpGenerationRequest(2L,1L);
+		ipGenerationRequest2 = new IpGenerationRequest(2L,5L);
 		ipGenerationResponse = new ArrayList<>();
 		ipGenerationResponse.add("10.2.3.0");
 		ipGenerationResponse.add("10.2.3.1");
@@ -53,6 +57,8 @@ public class IpManagementControllerTests {
 	@AfterEach
 	void tearDown() {
 		ipPool = null;
+		ipGenerationRequest=null;
+		ipGenerationResponse=null;
 	}
 
 	@Test
@@ -74,13 +80,56 @@ public class IpManagementControllerTests {
 		mockMvc.perform(MockMvcRequestBuilders.post("/go/api/v1.0/ip/address")
 				.contentType(MediaType.APPLICATION_JSON)
 				.content(asJsonString(ipGenerationRequest)))
-				.andExpect(status().isOk())
+				.andExpect(status().isCreated())
 				.andDo(print())
 				.andReturn()
 				.getResponse()
 				.getContentAsString()
 				.contains("10.2.3.0");
 	}
+	
+	@Test
+	public void testGetIpPoolDetailsForIncorrectIP() throws Exception {
+		
+		when(ipManagementService.getPoolDetails(5L)).thenThrow(IpPoolNotFoundException.class);
+		mockMvc.perform(MockMvcRequestBuilders.get("/go/api/v1.0/ip/pool")
+				.param("poolId", "5"))
+				.andExpect(status().is4xxClientError())
+				.andDo(print())
+				.andReturn()
+				.getResponse()
+				.getContentAsString()
+				.contains("IP-ERROR-003");
+	}
+	
+	@Test
+	public void testGenerateIpAddressWithInvaildPoolId() throws Exception {
+	when(ipManagementService.generateIpAddress(ipGenerationRequest2)).thenThrow(IpPoolNotFoundException.class);
+	mockMvc.perform(MockMvcRequestBuilders.post("/go/api/v1.0/ip/address")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(asJsonString(ipGenerationRequest2)))
+			.andExpect(status().is4xxClientError())
+			.andDo(print())
+			.andReturn()
+			.getResponse()
+			.getContentAsString()
+			.contains("IP-ERROR-003");
+	}
+	
+	@Test
+	public void testGenerateIpAddressWithInvaildCapacity() throws Exception {
+	when(ipManagementService.generateIpAddress(ipGenerationRequest2)).thenThrow(InvalidCapacityException.class);
+	mockMvc.perform(MockMvcRequestBuilders.post("/go/api/v1.0/ip/address")
+			.contentType(MediaType.APPLICATION_JSON)
+			.content(asJsonString(ipGenerationRequest2)))
+			.andExpect(status().is4xxClientError())
+			.andDo(print())
+			.andReturn()
+			.getResponse()
+			.getContentAsString()
+			.contains("IP-ERROR-002");
+	}
+	
 	
 	public static String asJsonString(final Object obj) {
         try {
