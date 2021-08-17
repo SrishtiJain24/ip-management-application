@@ -30,7 +30,15 @@ public class IpManagementServiceImpl implements IpManagementService {
 
 	@Autowired
 	IpAddressRepository ipAddressRepository;
-
+	
+	
+	/**
+	 * Fetches pool Id from DB. Returns error if not found
+	 * 
+	 * @param poolId
+	 * @return IpPool
+	 * @throws IpPoolNotFoundException, GenericException
+	 */
 	public IpPool getPoolDetails(Long poolId) {
 		Optional<IpPool> ipPool;
 		try {
@@ -46,9 +54,18 @@ public class IpManagementServiceImpl implements IpManagementService {
 		}
 	}
 
+
 	/**
-	 * Assuming IP address will always have 4 . separated numbers. And numbers are
-	 * assigned in incremental order of lower bound.
+	 * 
+	 * Validates if pool id exists and required capacity is available, else throw error.
+	 * Creates the required IPs in DB
+	 * Updates the used capacity of the IP pool
+	 * 
+	 * Assuming numbers are assigned in incremental order of lower bound.
+	 * 
+	 * @param IpGenerationRequest
+	 * @return  List of Ip addresses
+	 * @throws IpPoolNotFoundException,InvalidCapacityException,GenericException
 	 */
 	public List<String> generateIpAddress(IpGenerationRequest ipRequest) {
 		IpPool ipPool = getPoolDetails(ipRequest.getIpPoolId());
@@ -65,6 +82,15 @@ public class IpManagementServiceImpl implements IpManagementService {
 		}
 	}
 
+	/**
+	 * 
+	 * Creates the required IP addresses
+	 * 
+	 * Assuming numbers are assigned in incremental order of lower bound.
+	 * 
+	 * @param ipStartIndex, required Ips, IpPool, ipAddressPrefix
+	 * @return  List of Ip addresses
+	 */
 	public List<IpAddress> createIPAddresses(Long ipStartIndex, Long totalIp, IpPool ipPool, String ipAddressPrefix) {
 		log.debug("Generating {} Ip addresses from index : {} for Ip Pool: {}", totalIp, ipStartIndex, ipPool);
 		List<IpAddress> ipAddressList = new ArrayList<>();
@@ -81,6 +107,14 @@ public class IpManagementServiceImpl implements IpManagementService {
 		return ipAddressList;
 	}
 
+
+	/**
+	 * 
+	 * Persist all Ip addresses in DB. returns error if it fails
+	 * 
+	 * @param List of Ip addresses
+	 * @throws GenericException
+	 */
 	public void persistIPAddresses(List<IpAddress> ipAddressList) {
 		try {
 			ipAddressRepository.saveAll(ipAddressList);
@@ -90,6 +124,14 @@ public class IpManagementServiceImpl implements IpManagementService {
 		}
 	}
 
+
+	/**
+	 * 
+	 * Update Ip pool details in DB. returns error if it fails
+	 * 
+	 * @param IpPool, used Capacity
+	 * @throws GenericException
+	 */
 	public void persistIPPoolChanges(IpPool ipPool, Long totalIp) {
 		try {
 			ipPool.setUsedCapacity(ipPool.getUsedCapacity() + totalIp);
